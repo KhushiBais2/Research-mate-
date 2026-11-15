@@ -2,21 +2,10 @@
 import os
 import html
 import hashlib
+import base64
 import streamlit as st
 
 from src.rag_pipeline import process_document, answer_question
-
-
-# --------------------------------------------------
-# PAGE CONFIGURATION
-# --------------------------------------------------
-
-st.set_page_config(
-    page_title="ResearchMate | AI Research Assistant",
-    page_icon="📚",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 
 # --------------------------------------------------
@@ -35,6 +24,17 @@ UPLOAD_FOLDER = os.path.join(
     BASE_DIR,
     "data",
     "uploaded_papers"
+)
+
+
+# --------------------------------------------------
+# PAGE CONFIGURATION
+# --------------------------------------------------
+
+st.set_page_config(
+    page_title="ResearchMate | AI Research Assistant",
+    page_icon=LOGO_PATH if os.path.exists(LOGO_PATH) else "📚",
+    layout="wide"
 )
 
 
@@ -141,7 +141,7 @@ st.markdown(
 
     .hero-banner h1 {
         color: #FFFFFF !important;
-        font-size: 34px;
+        font-size: 34px !important;
         margin-bottom: 10px;
     }
 
@@ -261,7 +261,7 @@ st.markdown(
         padding: 15px;
     }
 
-    /* FIX: Chat text visibility */
+    /* Chat text visibility */
     div[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
     div[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p,
     div[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] span,
@@ -356,7 +356,6 @@ def display_sources(sources):
 
 with st.sidebar:
 
-    # Display logo
     if os.path.exists(LOGO_PATH):
 
         st.image(
@@ -368,7 +367,6 @@ with st.sidebar:
 
         st.warning("ResearchMate logo not found.")
 
-    # Description
     st.markdown(
         """
         <div class="sidebar-description">
@@ -380,7 +378,6 @@ with st.sidebar:
 
     st.divider()
 
-    # Navigation
     selected_page = st.radio(
         "Navigation",
         [
@@ -398,16 +395,40 @@ with st.sidebar:
 
 if selected_page == "🏠 Dashboard":
 
+    # Convert logo into Base64
+    if os.path.exists(LOGO_PATH):
+
+        with open(LOGO_PATH, "rb") as image_file:
+
+            logo_base64 = base64.b64encode(
+                image_file.read()
+            ).decode("utf-8")
+
+        logo_html = (
+            f'<img src="data:image/png;base64,{logo_base64}" '
+            'style="width:75px;height:75px;object-fit:contain;">'
+        )
+
+    else:
+
+        logo_html = ""
+
+    # Build banner HTML without indentation or code-block formatting
+    hero_html = (
+        '<div class="hero-banner">'
+        '<div style="display:flex;align-items:center;gap:20px;">'
+        f'{logo_html}'
+        '<div>'
+        '<h1>Welcome to ResearchMate</h1>'
+        '<p>Understand research papers faster with AI-powered '
+        'question answering and semantic search.</p>'
+        '</div>'
+        '</div>'
+        '</div>'
+    )
+
     st.markdown(
-        """
-        <div class="hero-banner">
-            <h1>Welcome to ResearchMate 📚</h1>
-            <p>
-                Understand research papers faster with AI-powered
-                question answering and semantic search.
-            </p>
-        </div>
-        """,
+        hero_html,
         unsafe_allow_html=True
     )
 
@@ -522,9 +543,7 @@ elif selected_page == "📄 Research Workspace":
         help="Upload a text-based PDF research paper."
     )
 
-    # ----------------------------------------------
     # PROCESS UPLOADED PDF
-    # ----------------------------------------------
 
     if uploaded_file is not None:
 
@@ -541,9 +560,14 @@ elif selected_page == "📄 Research Workspace":
                 exist_ok=True
             )
 
+            # Use uploaded filename safely
+            safe_filename = os.path.basename(
+                uploaded_file.name
+            )
+
             pdf_path = os.path.join(
                 UPLOAD_FOLDER,
-                uploaded_file.name
+                safe_filename
             )
 
             with open(pdf_path, "wb") as file:
@@ -593,9 +617,7 @@ elif selected_page == "📄 Research Workspace":
             f"{st.session_state.file_name}"
         )
 
-    # ----------------------------------------------
     # QUESTION INPUT
-    # ----------------------------------------------
 
     st.divider()
 
@@ -615,9 +637,7 @@ elif selected_page == "📄 Research Workspace":
         use_container_width=True
     )
 
-    # ----------------------------------------------
     # GENERATE ANSWER
-    # ----------------------------------------------
 
     if generate_button:
 
@@ -665,9 +685,7 @@ elif selected_page == "📄 Research Workspace":
                         f"Error generating answer: {str(e)}"
                     )
 
-    # ----------------------------------------------
     # DISPLAY CHAT HISTORY
-    # ----------------------------------------------
 
     if st.session_state.chat_history:
 
