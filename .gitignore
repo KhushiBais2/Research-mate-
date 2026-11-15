@@ -1,0 +1,21 @@
+
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# FAISS database
+vector_db/
+
+# Uploaded research papers
+data/uploaded_papers/
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
